@@ -48,7 +48,7 @@
     }
 
     test("Empty program", function () {
-        deepEqual(parse(''), { type: 'statements', children: [] }, "empty program parses");
+        deepEqual(parse(''), ast("statements"), "empty program parses");
     });
 
     test("Expressions", function () {

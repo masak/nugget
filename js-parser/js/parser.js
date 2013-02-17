@@ -66,8 +66,9 @@ var parse = function (text) {
         statements.push( parse_statement() );
     }
 
-    return {
-        type: 'statements',
-        children: statements
-    };
+    var program = { type: 'statements' };
+    if (statements.length > 0) {
+        program.children = statements;
+    }
+    return program;
 }
