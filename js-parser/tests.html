@@ -10,110 +10,79 @@
   <script language="javascript" type="text/javascript">
     module("Nugget parser");
 
+    var ast = function(text) {
+        var convert = function(lines) {
+            var indent = function(line) { return line.match(/ */)[0].length };
+            var firstLineIndent = indent(lines[0]);
+            lines = lines.map(function(line) { return line.substr(firstLineIndent) });
+            var m = lines[0].match(/^(\w+)(?:: (\S+))?/);
+            var type  = m[1],
+                value = m[2];
+            var node = { type: type };
+            if (value) {
+                if (("" + parseInt(value, 10)) === value) {
+                    value = parseInt(value, 10);
+                }
+                node.value = value;
+            }
+            if (lines.length > 1 && indent(lines[1]) > 0) {
+                var children = [];
+                var startLine = 1,
+                    stopLine;
+                while (startLine < lines.length && indent(lines[startLine]) > 0) {
+                    stopLine = startLine + 1;
+                    while (stopLine < lines.length && indent(lines[stopLine]) > indent(lines[startLine])) {
+                        ++stopLine;
+                    }
+                    var child = convert( lines.slice(startLine, stopLine) );
+                    children.push(child);
+                    startLine = stopLine;
+                }
+                node.children = children;
+            }
+            return node;
+        }
+
+        var lines = text.split(/\n/);
+        return convert(lines);
+    }
+
     test("Empty program", function () {
         deepEqual(parse(''), { type: 'statements', children: [] }, "empty program parses");
     });
 
     test("Expressions", function () {
-        deepEqual(parse('42'), {
-            type: 'statements',
-            children: [
-                {
-                    type: 'expression',
-                    children: [
-                        {
-                            type: 'literal',
-                            value: 42
-                        }
-                    ]
-                }
-            ]
-        }, "simple integer parses");
+        deepEqual(parse('42'), ast(
+            "statements              \n" +
+            "    expression          \n" +
+            "        literal: 42     \n"
+        ), "simple integer parses");
 
-        deepEqual(parse('40+2'), {
-            type: 'statements',
-            children: [
-                {
-                    type: 'expression',
-                    children: [
-                        {
-                            type: 'operator',
-                            value: 'infix:<+>',
-                            children: [
-                                {
-                                    type: 'literal',
-                                    value: 40
-                                },
-                                {
-                                    type: 'literal',
-                                    value: 2
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }, "addition of two integers parses");
+        deepEqual(parse('40+2'), ast(
+            "statements                     \n" +
+            "   expression                  \n" +
+            "       operator: infix:<+>     \n" +
+            "           literal: 40         \n" +
+            "           literal: 2          \n"
+        ), "addition of two integers parses");
 
-        deepEqual(parse('40 + 2'), {
-            type: 'statements',
-            children: [
-                {
-                    type: 'expression',
-                    children: [
-                        {
-                            type: 'operator',
-                            value: 'infix:<+>',
-                            children: [
-                                {
-                                    type: 'literal',
-                                    value: 40
-                                },
-                                {
-                                    type: 'literal',
-                                    value: 2
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }, "addition of two integers parses even with spaces in it");
+        deepEqual(parse('40 + 2'), ast(
+            "statements                     \n" +
+            "   expression                  \n" +
+            "       operator: infix:<+>     \n" +
+            "           literal: 40         \n" +
+            "           literal: 2          \n"
+        ), "addition of two integers parses even with spaces in it");
 
-        deepEqual(parse('30 + 10 + 1'), {
-            type: 'statements',
-            children: [
-                {
-                    type: 'expression',
-                    children: [
-                        {
-                            type: 'operator',
-                            value: 'infix:<+>',
-                            children: [
-                                {
-                                    type: 'operator',
-                                    value: 'infix:<+>',
-                                    children: [
-                                        {
-                                            type: 'literal',
-                                            value: 30
-                                        },
-                                        {
-                                            type: 'literal',
-                                            value: 10
-                                        }
-                                    ]
-                                },
-                                {
-                                    type: 'literal',
-                                    value: 1
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }, "addition of two integers parses even with spaces in it");
+        deepEqual(parse('30 + 11 + 1'), ast(
+            "statements                     \n" +
+            "   expression                  \n" +
+            "       operator: infix:<+>     \n" +
+            "           operator: infix:<+> \n" +
+            "               literal: 30     \n" +
+            "               literal: 11     \n" +
+            "           literal: 1          \n"
+        ), "addition of two integers parses even with spaces in it");
     });
   </script>
   <h1 id="qunit-header">Nugget JS parser tests</h1>
