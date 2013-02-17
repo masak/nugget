@@ -1,0 +1,88 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Nugget JS parser tests</title>
+  <link href="css/qunit.css" rel="stylesheet" type="text/css" />
+  <script src="js/qunit.js" type="text/javascript"></script>
+  <script src="js/parser.js" type="text/javascript"></script>
+</head>
+<body>
+  <script language="javascript" type="text/javascript">
+    module("Nugget parser");
+
+    test("Empty program", function () {
+        deepEqual(parse(''), { type: 'statements', children: [] }, "empty program parses");
+    });
+
+    test("Expressions", function () {
+        deepEqual(parse('42'), {
+            type: 'statements',
+            children: [
+                {
+                    type: 'expression',
+                    children: [
+                        {
+                            type: 'literal',
+                            value: 42
+                        }
+                    ]
+                }
+            ]
+        }, "simple integer parses");
+
+        deepEqual(parse('40+2'), {
+            type: 'statements',
+            children: [
+                {
+                    type: 'expression',
+                    children: [
+                        {
+                            type: 'operator',
+                            value: 'infix:<+>',
+                            children: [
+                                {
+                                    type: 'literal',
+                                    value: 40
+                                },
+                                {
+                                    type: 'literal',
+                                    value: 2
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }, "addition of two integers parses");
+
+        deepEqual(parse('40 + 2'), {
+            type: 'statements',
+            children: [
+                {
+                    type: 'expression',
+                    children: [
+                        {
+                            type: 'operator',
+                            value: 'infix:<+>',
+                            children: [
+                                {
+                                    type: 'literal',
+                                    value: 40
+                                },
+                                {
+                                    type: 'literal',
+                                    value: 2
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }, "addition of two integers parses even with spaces in it");
+    });
+  </script>
+  <h1 id="qunit-header">Nugget JS parser tests</h1>
+  <h2 id="qunit-banner"></h2>
+  <ol id="qunit-tests"></ol>
+</body>
+</html>
