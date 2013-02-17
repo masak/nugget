@@ -42,7 +42,7 @@ var parse = function (text) {
     var parse_expression = function() {
         var expression = tokens.next();
         tokens.advance();
-        if (tokens.next().type === 'operator') {
+        while (tokens.next().type === 'operator') {
             var lhs = expression;
             var optree = tokens.next();
             tokens.advance();

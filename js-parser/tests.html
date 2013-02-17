@@ -79,6 +79,41 @@
                 }
             ]
         }, "addition of two integers parses even with spaces in it");
+
+        deepEqual(parse('30 + 10 + 1'), {
+            type: 'statements',
+            children: [
+                {
+                    type: 'expression',
+                    children: [
+                        {
+                            type: 'operator',
+                            value: 'infix:<+>',
+                            children: [
+                                {
+                                    type: 'operator',
+                                    value: 'infix:<+>',
+                                    children: [
+                                        {
+                                            type: 'literal',
+                                            value: 30
+                                        },
+                                        {
+                                            type: 'literal',
+                                            value: 10
+                                        }
+                                    ]
+                                },
+                                {
+                                    type: 'literal',
+                                    value: 1
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }, "addition of two integers parses even with spaces in it");
     });
   </script>
   <h1 id="qunit-header">Nugget JS parser tests</h1>
