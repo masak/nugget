@@ -82,7 +82,17 @@
             "               literal: 30     \n" +
             "               literal: 11     \n" +
             "           literal: 1          \n"
-        ), "addition of two integers parses even with spaces in it");
+        ), "addition of three terms");
+
+        deepEqual(parse('2 + 8 * 5'), ast(
+            "statements                     \n" +
+            "   expression                  \n" +
+            "       operator: infix:<+>     \n" +
+            "           literal: 2          \n" +
+            "           operator: infix:<*> \n" +
+            "               literal: 8      \n" +
+            "               literal: 5      \n"
+        ), "addition and multiplication, multiplication binds tighter");
     });
   </script>
   <h1 id="qunit-header">Nugget JS parser tests</h1>

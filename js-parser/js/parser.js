@@ -22,9 +22,11 @@ var parse = function (text) {
                 pos = stop;
                 return { type: 'literal', value: parseInt(number, 10) };
             }
-            if (text.charAt(pos) == '+') {
+            if ('+*'.indexOf(text.charAt(pos)) > -1 ) {
+                // we're a bit special-cased on single-char ops so far
+                var value = 'infix:<' + text.charAt(pos) + '>';
                 ++pos;
-                return { type: 'operator', value: 'infix:<+>' };
+                return { type: 'operator', value: value };
             }
             throw "Don't know how to tokenize " + text.charAt(pos) + " at position " + pos;
         }
@@ -40,17 +42,44 @@ var parse = function (text) {
     };
 
     var parse_expression = function() {
-        var expression = tokens.next();
+        var termstack = [];
+        var opstack = [];
+        var tightness = function(op) {
+            if (op.value === 'infix:<+>') {
+                return 1;
+            }
+            if (op.value === 'infix:<*>') {
+                return 2;
+            }
+            throw "Don't know the tightness of " + op.value;
+        }
+        var top_op = function() { return opstack[opstack.length - 1] }
+        var reduce = function() {
+            var optree = opstack.pop();
+            var rhs = termstack.pop(),
+                lhs = termstack.pop();
+            optree.children = [lhs, rhs];
+            return optree;
+        }
+
+        termstack.push(tokens.next());
         tokens.advance();
         while (tokens.next().type === 'operator') {
-            var lhs = expression;
-            var optree = tokens.next();
-            tokens.advance();
-            var rhs = tokens.next();
-            tokens.advance();
-            optree.children = [lhs, rhs];
-            expression = optree;
+            var op = tokens.next();
+            if (opstack.length == 0 || tightness(top_op()) < tightness(op)) {
+                opstack.push(op);
+                tokens.advance();
+                termstack.push(tokens.next());
+                tokens.advance();
+            }
+            else {
+                termstack.push(reduce());
+            }
         }
+        while (opstack.length > 0) {
+            termstack.push(reduce());
+        }
+        var expression = termstack[0];
         return {
             type: 'expression',
             children: [
