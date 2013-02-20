@@ -22,7 +22,7 @@ var parse = function (text) {
                 pos = stop;
                 return { type: 'literal', value: parseInt(number, 10) };
             }
-            if ('+*'.indexOf(text.charAt(pos)) > -1 ) {
+            if ('+*-/'.indexOf(text.charAt(pos)) > -1 ) {
                 // we're a bit special-cased on single-char ops so far
                 var value = 'infix:<' + text.charAt(pos) + '>';
                 ++pos;
@@ -45,10 +45,10 @@ var parse = function (text) {
         var termstack = [];
         var opstack = [];
         var tightness = function(op) {
-            if (op.value === 'infix:<+>') {
+            if (op.value === 'infix:<+>' || op.value === 'infix:<->') {
                 return 1;
             }
-            if (op.value === 'infix:<*>') {
+            if (op.value === 'infix:<*>' || op.value === 'infix:</>') {
                 return 2;
             }
             throw "Don't know the tightness of " + op.value;

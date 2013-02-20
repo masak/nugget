@@ -93,6 +93,16 @@
             "               literal: 8      ",
             "               literal: 5      "
         ), "addition and multiplication, multiplication binds tighter");
+
+        deepEqual(parse('2 - 8 / 5'), ast(
+            "statements                     ",
+            "   expression                  ",
+            "       operator: infix:<->     ",
+            "           literal: 2          ",
+            "           operator: infix:</> ",
+            "               literal: 8      ",
+            "               literal: 5      "
+        ), "subtraction and division, division binds tighter");
     });
   </script>
   <h1 id="qunit-header">Nugget JS parser tests</h1>
