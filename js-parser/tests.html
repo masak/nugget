@@ -10,7 +10,7 @@
   <script language="javascript" type="text/javascript">
     module("Nugget parser");
 
-    var ast = function(text) {
+    var ast = function() {
         var convert = function(lines) {
             var indent = function(line) { return line.match(/ */)[0].length };
             var firstLineIndent = indent(lines[0]);
@@ -43,7 +43,7 @@
             return node;
         }
 
-        var lines = text.split(/\n/);
+        var lines = Array.prototype.slice.apply(arguments);
         return convert(lines);
     }
 
@@ -53,45 +53,45 @@
 
     test("Expressions", function () {
         deepEqual(parse('42'), ast(
-            "statements              \n" +
-            "    expression          \n" +
-            "        literal: 42     \n"
+            "statements              ",
+            "    expression          ",
+            "        literal: 42     "
         ), "simple integer parses");
 
         deepEqual(parse('40+2'), ast(
-            "statements                     \n" +
-            "   expression                  \n" +
-            "       operator: infix:<+>     \n" +
-            "           literal: 40         \n" +
-            "           literal: 2          \n"
+            "statements                     ",
+            "   expression                  ",
+            "       operator: infix:<+>     ",
+            "           literal: 40         ",
+            "           literal: 2          "
         ), "addition of two integers parses");
 
         deepEqual(parse('40 + 2'), ast(
-            "statements                     \n" +
-            "   expression                  \n" +
-            "       operator: infix:<+>     \n" +
-            "           literal: 40         \n" +
-            "           literal: 2          \n"
+            "statements                     ",
+            "   expression                  ",
+            "       operator: infix:<+>     ",
+            "           literal: 40         ",
+            "           literal: 2          "
         ), "addition of two integers parses even with spaces in it");
 
         deepEqual(parse('30 + 11 + 1'), ast(
-            "statements                     \n" +
-            "   expression                  \n" +
-            "       operator: infix:<+>     \n" +
-            "           operator: infix:<+> \n" +
-            "               literal: 30     \n" +
-            "               literal: 11     \n" +
-            "           literal: 1          \n"
+            "statements                     ",
+            "   expression                  ",
+            "       operator: infix:<+>     ",
+            "           operator: infix:<+> ",
+            "               literal: 30     ",
+            "               literal: 11     ",
+            "           literal: 1          "
         ), "addition of three terms");
 
         deepEqual(parse('2 + 8 * 5'), ast(
-            "statements                     \n" +
-            "   expression                  \n" +
-            "       operator: infix:<+>     \n" +
-            "           literal: 2          \n" +
-            "           operator: infix:<*> \n" +
-            "               literal: 8      \n" +
-            "               literal: 5      \n"
+            "statements                     ",
+            "   expression                  ",
+            "       operator: infix:<+>     ",
+            "           literal: 2          ",
+            "           operator: infix:<*> ",
+            "               literal: 8      ",
+            "               literal: 5      "
         ), "addition and multiplication, multiplication binds tighter");
     });
   </script>
