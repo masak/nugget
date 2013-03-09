@@ -103,6 +103,25 @@
             "               literal: 8      ",
             "               literal: 5      "
         ), "subtraction and division, division binds tighter");
+
+        deepEqual(parse('+5 + -5 - ~5 + !5 - ?5'), ast(
+            "statements                                  ",
+            "    expression                              ",
+            "        operator: infix:<->                 ",
+            "            operator: infix:<+>             ",
+            "                operator: infix:<->         ",
+            "                    operator: infix:<+>     ",
+            "                        operator: prefix:<+>",
+            "                            literal: 5      ",
+            "                        operator: prefix:<->",
+            "                            literal: 5      ",
+            "                    operator: prefix:<~>    ",
+            "                        literal: 5          ",
+            "                operator: prefix:<!>        ",
+            "                    literal: 5              ",
+            "            operator: prefix:<?>            ",
+            "                literal: 5                  "
+        ), "prefix operators +-~!?");
     });
   </script>
   <h1 id="qunit-header">Nugget JS parser tests</h1>
