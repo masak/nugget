@@ -85,8 +85,8 @@ There may or may not be a very high upper limit to identifier length, such as 25
 
 These words are keywords in the language, so you can not use them as identifiers.
 
-    clone def does else class false fun for handle has if last loop
-    next redo repeat return throw true undefined unless until var while
+    clone def does else class false fun for handle has if last loop me meth
+    next redo repeat return role throw true undefined unless until us var while
 
 ### Statements
 
@@ -133,7 +133,7 @@ Besides `var` which declares names for mutable values, there's also `let` and `d
 
     def foo = ...;   # compile-time, can not change it
     let bar = ...;   # runtime, can not change it
-    var baz = ...;   # a variable
+    var baz = ...;   # runtime, a variable
 
 Both `def` and `let` require an assignment in connection with the declaration. `var` doesn't.
 
@@ -141,7 +141,7 @@ It's possible to do several variable declarations in one statement, by separatin
 
     var a, b, c;
     let start = 0,
-        end   = 100,
+        end   = start + 100,
         step  = 10;
 
 ### Functions
@@ -157,9 +157,13 @@ All functions are anonymous. You give a function a name by assigning it to a var
         }
     };
 
-The parentheses after `fun` are optional; if the function doesn't take any parameters, you can leave them out. The final semicolon is required, if you're planning on more statements after the function definition.
+The parentheses after `fun` are optional; if the function doesn't take any parameters, you can leave them out. Parameters are treated as `let` variable declarations; that is, bound at runtime but unassignable.
+
+The final semicolon is required, if you're planning on more statements after the function definition.
 
 It's possible to call a function before declaring it, as long as it's declared before the end of the compilation unit. This allows functions to be mutually recursive.
+
+### Function calls
 
 Three conditions cause the compiler to consider the mention of a function to be a *call* to that function:
 
@@ -175,6 +179,29 @@ If none of the above hold, the mention of the function will parse as the functio
     say four;      # <function>
     say add 40, 2; # 42, by rule 2
     say;           # empty line, by rule 3
+
+### Functions closing over their environment
+
+Variables declared inside of a function, as well as the function's parameters, are nicely scoped inside of the function itself. But because of nested scoping, a function can also refer to variables from outside of itself. We call the outside the *environment*, and the act of using a variable from the environment *clsosing over* the environment.
+
+    def x = 42;
+    def closes_over_x = fun { say "And the value is " ~ x };
+
+A function can always close over its environment, but functions defined by `def` can only refer to variables defined by `def`.
+
+    var x = "this won't work";
+    def tries_to_close_over_x = fun { say x }; # error: compile-time function can't close over runtime value
+
+The rationale behind this restriction is that only `let` and `var` allow the kind of runtime rebinding that makes the function close over the right thing.
+
+Fortunately, the fix is simple: use `let` for those functions that need to close over runtime values:
+
+    var x = "works!";
+    let successfully_closes_over_x = fun { say x }; # works
+
+Using `let` to define all your functions works and means you never have to think about whether you're closing over your environment. But this is considered poor style; you're meant to think about it.
+
+It's possible to define a function with `var` as well; do this if you plan to rebind it during its lifetime.
 
 ### Conditionals
 
@@ -277,6 +304,8 @@ Before a `for`, `while`, `until`, `repeat`, or `loop` construct, you can place a
 
 With the help of labels, loop control constructs can bind on any surrounding loop block, not just the innermost one.
 
+Though not a requirement, it's recommended to write the labels in all-capitals.
+
 It's not possible to put labels on non-loop statements.
 
 ### Exceptions
@@ -302,7 +331,7 @@ A class introduces a lexically scoped name into the program:
         # method declarations
     };
 
-Only `def` and `has` declarations are allowed within the class block. `def` is for class-level constants and methods; `has` is for public properties. There are no private properties.
+Only `def`, `let` and `has` declarations are allowed within the class block. `def` is for class-level constants and methods; `let` is for constants and methods that close over their environment; `has` is for public properties. There are no private properties.
 
 ### Property traits
 
@@ -324,11 +353,13 @@ Some traits take an argument, which must resolve to a method defined in the same
     def Manager = class {
         has title (trigger: when_title_set);
         has description (lazy, builder: build_description);
+
+        # definitions of when_title_set and build_description
     };
 
 ### The keyword `new`
 
-Any property thus introduced can then be accessed through instances of that class:
+Any property can be accessed through instances of that class:
 
     let c = new Complex;
     say c.x;    # 0
@@ -342,7 +373,7 @@ If you want, you can follow the constructor invocation with an initialization bl
 
 Assigning to things that are not properties of the class triggers a compile-time error. Not supplying values to properties marked `required` is also an error. Assigning to `frozen` properties is allowed within this initialization block but disallowed outside of it.
 
-If you're feeling adventurous, you can even instantiate an object *without* a class declaration:
+You can even instantiate an object *without* a class declaration:
 
     let o = new {
         firstname = "Michael";
@@ -356,20 +387,22 @@ As expected, these are *not* checked against a corresponding class definition, s
         has lastname = "Jackson";
     };
 
+For now, let's be conservative and decide that you can't provide traits when using this form of instance creation.
+
 ### Methods
 
-A method declaration is simply a `def` inside a class declaration, assigning to a function.
+A method declaration is simply a `def` (or `let`) inside a class declaration, assigning to a function.
 
     def Complex = class {
         # property declarations
     
-        def abs = fun (c:) { return abs c.x * c.x + c.y * c.y };
-        def conj = fun (c:) { return new Complex { x = c.x; y = -c.y } };
+        def abs = meth { return abs me.x * me.x + me.y * me.y };
+        def conj = meth { return new Complex { x = me.x; y = -me.y } };
     }
 
-Note the optional `c:`, allowed exactly on this kind of function. It's our chance to name the method's invocant, so that we can refer to it and its properties in the function. If (and only) if you don't provide an invocant, the function will be callable on the class itself, in addition to each instance.
+Inside a `meth` function, the keyword `me` is available, referring to the (late-bound) object on which this method was called.
 
-As opposed to the `new` block, just referring to the properties as `x` and `y` will not work in methods; they have to be referred to as `c.x` and `c.y`. Note that this is true for properties defined using `has`; identifiers defined in the class block using `def`, `let` or `var` are visible as usual.
+As opposed to the `new` block, just referring to the properties as `x` and `y` will not work in methods; they have to be referred to as `me.x` and `me.y`. Note that this is true for properties defined using `has`; identifiers defined in the class block using `def`, `let` or `var` are visible as usual.
 
 Methods are invoked like this:
 
@@ -386,7 +419,7 @@ Just as with functions, either parentheses or a list of arguments are required t
 
 An alternative way to create new instances is to use the `clone` keyword. The definition of the `.conj` method above could have been written like this:
 
-    def conj = fun (c:) { return clone c { y = -c.y } };
+    def conj = meth { return clone me { y = -me.y } };
 
 The `clone` keyword expects an existing object and then a block that works just like with `new`. If the type of the object can be inferred (as it can here), only declared properties are recognized in the block.
 
@@ -400,8 +433,8 @@ Assigning to `required` properties is not necessary in this kind of initializati
         def Node = class {
             has edges;
             # ...
-            def neighbors = fun (graph, node1:) {
-                return graph.nodes.grep fun(node2) { adjacent(node1, node2) };
+            def neighbors = meth {
+                return us.nodes.grep fun(other_node) { adjacent(me, other_node) };
             };
         };
     };
@@ -410,7 +443,9 @@ Two things are worth noting here:
 
 * It's possible to define a class nested inside another. This is just a consequence of `def` clauses being allowed inside classes.
 
-* The `neighbors` method has two invocants. One is for a `Graph` instance, and one is for a `Node` instance. Each method in an inner class gets to declare zero, one, or two invocants like this. (If it declares one invocant, it would be a `Node`, the inner one.) More generally, a method gets to declare as many invocants as there are class declarations surrounding it.
+* The `neighbors` method has two invocants. One is for a `Graph` instance (available as `us`), and one is for a `Node` instance (available as `me`).
+
+It's considered an error to declare a class at a class-nesting depth of two; classes in classes are OK, but not classes in classes in classes.
 
 ### Operators
 
