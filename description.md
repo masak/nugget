@@ -486,3 +486,23 @@ For unary operators, this is interpreted as follows:
     L  Left               (!a)!
     R  Right              !(a!)
     N  None               ILLEGAL
+
+## Type system
+
+Nugget has a gradual type system, kind of an opt-in strictness which you can apply to the parts of your program where you feel it makes sense. Because there's no class inheritance in the language, much of the type information is communicated using roles.
+
+### Typing variables
+
+All three kinds of variable declarations can take an optional type after the variable name:
+
+    def age : Int = 37;
+    let address : Str = "Brooklyn, NY";
+    var name : Str = "Fritz";
+
+Making an assignment, either in connection with the declaration or later in the program, that countervenes the type annotation, is an error; at compile-time if possible, otherwise at runtime.
+
+It's worth noting that type information is per-variable:
+
+    var a, b, c : Int; # only c is typed
+
+There's no `Object` or `Mu` type, or any other base type. If a type annotation is not provided, the variable is simply not type-restricted.
