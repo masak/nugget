@@ -79,14 +79,14 @@ There's no variable interpolation in strings. Use a templating library.
 
 The user gives variables, constants, and classes names, and these names are known as **identifiers**. An identifier may contain alphanumeric characters and underscores. It may not start with a digit.
 
-There may or may not be a very high upper limit to identifier length, such as 255 characters, but it doesn't really matter. It's considered bad taste to have identifiers longer than 40 characters.
+There's not really an upper limit to identifier length. It's considered bad taste to have identifiers longer than 40 characters.
 
 ### Keywords
 
 These words are keywords in the language, so you can not use them as identifiers.
 
-    clone def does else class false fun for handle has if last loop me meth
-    next redo repeat return role throw true undefined unless until us var while
+    clone def does else class false fun for handle has if last loop meth
+    next redo repeat return role self throw true undefined unless until var while
 
 ### Statements
 
@@ -125,7 +125,7 @@ Variables are lexical by default, meaning that they are only visible from the po
         # only a visible
     }
 
-An variable is only visible if it has been declared first in the same scope. A small exception is the `new` blocks; see below.
+An variable is only visible if it has been declared before in a surrounding scope. A small exception is the `new` blocks; see below.
 
 ### Declarations
 
@@ -211,7 +211,7 @@ In an `if` statement, parentheses are not required, but the curly braces are.
         return n;
     }
 
-An `if` statement may be followed up by any number of `if else` statements, and optionally an `else` statement at the end.
+An `if` statement may be followed up by any number of `else if` statements, and optionally an `else` statement at the end.
 
     if sth1 {
         # ...
@@ -396,13 +396,13 @@ A method declaration is simply a `def` (or `let`) inside a class declaration, as
     def Complex = class {
         # property declarations
     
-        def abs = meth { return abs me.x * me.x + me.y * me.y };
-        def conj = meth { return new Complex { x = me.x; y = -me.y } };
+        def abs = meth { return abs self.x * self.x + self.y * self.y };
+        def conj = meth { return new Complex { x = self.x; y = -self.y } };
     }
 
-Inside a `meth` function, the keyword `me` is available, referring to the (late-bound) object on which this method was called.
+Inside a `meth` function, the keyword `self` is available, referring to the (late-bound) object on which this method was called.
 
-As opposed to the `new` block, just referring to the properties as `x` and `y` will not work in methods; they have to be referred to as `me.x` and `me.y`. Note that this is true for properties defined using `has`; identifiers defined in the class block using `def`, `let` or `var` are visible as usual.
+As opposed to the `new` block, just referring to the properties as `x` and `y` will not work in methods; they have to be referred to as `self.x` and `self.y`. Note that this is true for properties defined using `has`; identifiers defined in the class block using `def`, `let` or `var` are visible as usual.
 
 Methods are invoked like this:
 
@@ -419,33 +419,11 @@ Just as with functions, either parentheses or a list of arguments are required t
 
 An alternative way to create new instances is to use the `clone` keyword. The definition of the `.conj` method above could have been written like this:
 
-    def conj = meth { return clone me { y = -me.y } };
+    def conj = meth { return clone self { y = -self.y } };
 
-The `clone` keyword expects an existing object and then a block that works just like with `new`. If the type of the object can be inferred (as it can here), only declared properties are recognized in the block.
+The `clone` keyword expects an existing object and then a block that works just like with `new`. The existing object is optional and defaults to `self`. If the type of the object can be inferred (as it can here), only declared properties are recognized in the block.
 
 Assigning to `required` properties is not necessary in this kind of initialization block. (Because it has already been provided in the original object, and will be copied across.) Assigning to `frozen` properties is allowed, on the grounds that this is an object initialization.
-
-### Inner classes
-
-    def Graph = class {
-        has nodes;
-        # ...
-        def Node = class {
-            has edges;
-            # ...
-            def neighbors = meth {
-                return us.nodes.grep fun(other_node) { adjacent(me, other_node) };
-            };
-        };
-    };
-
-Two things are worth noting here:
-
-* It's possible to define a class nested inside another. This is just a consequence of `def` clauses being allowed inside classes.
-
-* The `neighbors` method has two invocants. One is for a `Graph` instance (available as `us`), and one is for a `Node` instance (available as `me`).
-
-It's considered an error to declare a class at a class-nesting depth of two; classes in classes are OK, but not classes in classes in classes.
 
 ### Operators
 
@@ -459,7 +437,7 @@ Here's a table of all the operators:
     R  Exponentiation    **
     L  Symbolic unary    + - ~ ! ?
     L  Multiplicative    * / % %%
-    L  Additive          + -
+    L  Additive          + - <| |>
     L  Replication       x
     L  Concatenation     ~
     N  Structural infix  <=>
@@ -499,7 +477,7 @@ All three kinds of variable declarations can take an optional type after the var
     let address : Str = "Brooklyn, NY";
     var name : Str = "Fritz";
 
-Making an assignment, either in connection with the declaration or later in the program, that countervenes the type annotation, is an error; at compile-time if possible, otherwise at runtime.
+Making an assignment (either in the declaration or later in the program) that doesn't mesh with the type annotation, is an error; at compile-time whenever possible, otherwise at runtime.
 
 It's worth noting that type information is per-variable:
 
