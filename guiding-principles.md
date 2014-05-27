@@ -7,3 +7,4 @@
 * Declare/use combinations that can be matched statically
 * Instrumenting of the compiler (pragmas, macros)
 * Refactoring, refactorability
+* Interactivity/REPL from the start
